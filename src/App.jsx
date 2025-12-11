@@ -1,18 +1,15 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Stage, Layer, Line } from "react-konva";
-// 1. Імпортуємо нову бібліотеку
 import * as htmlToImage from "html-to-image";
 import Sidebar from "./components/Sidebar";
 import ArtworkLayer from "./components/ArtworkLayer";
 import { generateDepthMap, applyThresholdToDepthMap } from "./depthService";
-import { blobUrlToBase64 } from "./utils";
 import { generateLightingMap } from "./utils"; //
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
 import "./App.css";
 
 function App() {
-  // ... (ВЕСЬ СТЕЙТ ЗАЛИШАЄТЬСЯ БЕЗ ЗМІН) ...
   const [interiorImgUrl, setInteriorImgUrl] = useState(null);
   const [interiorImageObj, setInteriorImageObj] = useState(null);
   const [lightingMapUrl, setLightingMapUrl] = useState(null);
@@ -28,13 +25,6 @@ function App() {
     height: 100,
   });
   const [artworkPos, setArtworkPos] = useState({ x: 50, y: 50 });
-
-  const getPosInPx = () => {
-    return {
-      x: (artworkPos.x / 100) * displaySize.width,
-      y: (artworkPos.y / 100) * displaySize.height,
-    };
-  };
 
   const [isRatioLocked, setIsRatioLocked] = useState(true);
   const [imgAspectRatio, setImgAspectRatio] = useState(null);
@@ -236,8 +226,15 @@ function App() {
         setPerspective(cfg.geometry.perspective);
       }
       if (cfg.style) {
-        setShadow(cfg.style.shadow);
-        setFilters(cfg.style.filters);
+        setShadow((prev) => ({
+          ...prev,
+          ...cfg.style.shadow,
+        }));
+
+        setFilters((prev) => ({
+          ...prev,
+          ...cfg.style.filters,
+        }));
       }
       if (cfg.ai) {
         setDepthThreshold(cfg.ai.depthThreshold);
