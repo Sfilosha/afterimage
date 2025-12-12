@@ -6,6 +6,11 @@ import ArtworkLayer from "./components/ArtworkLayer";
 import { generateDepthMap, applyThresholdToDepthMap } from "./depthService";
 import { generateLightingMap } from "./utils"; //
 import JSZip from "jszip";
+import {
+  DEFAULT_FILTER,
+  DEFAULT_SHADOW,
+  DEFAULT_PERSPECTIVE,
+} from "./defaults.js";
 import { saveAs } from "file-saver";
 import "./App.css";
 
@@ -29,35 +34,18 @@ function App() {
   const [isRatioLocked, setIsRatioLocked] = useState(true);
   const [imgAspectRatio, setImgAspectRatio] = useState(null);
 
-  const [rotation, setRotation] = useState({ x: 0, y: 0, z: 0 });
-  const [perspective, setPerspective] = useState(800);
-  const [filters, setFilters] = useState({
-    brightness: 100,
-    contrast: 100,
-    saturate: 100,
-    sepia: 0,
-    lightingMapIntensity: 10,
-    lightingMapBlur: 15,
-    noise: 15,
-    softness: 0,
-  });
+  const [rotation, setRotation] = useState({ ...DEFAULT_PERSPECTIVE });
+  const [perspective, setPerspective] = useState(
+    DEFAULT_PERSPECTIVE.perspective
+  );
+  const [filters, setFilters] = useState({ ...DEFAULT_FILTER });
 
   // До речі, тепер blur у тіні працюватиме краще
-  const [shadow, setShadow] = useState({
-    offsetX: 5,
-    offsetY: 5,
-    blur: 5,
-    spread: 0,
-    color: "#000000",
-    opacity: 0.1,
-    contactOpacity: 0.2, // Наскільки темна лінія стику
-    frameDepth: 1, // Внутрішня тінь (розмір в px)
-  });
-
+  const [shadow, setShadow] = useState({ ...DEFAULT_SHADOW });
   const [drawMode, setDrawMode] = useState("none");
   const [refLineCoords, setRefLineCoords] = useState([]);
   const [isDrawingRef, setIsDrawingRef] = useState(false);
-  const [refLengthCm, setRefLengthCm] = useState(220);
+  const [refLengthCm, setRefLengthCm] = useState(250);
   const [pixelsPerCm, setPixelsPerCm] = useState(null);
 
   const [isDraggingArtwork, setIsDraggingArtwork] = useState(false);
@@ -422,13 +410,13 @@ function App() {
         quality: 1.0,
         pixelRatio: 2,
         backgroundColor: "#ffffff",
-        // --- ОСЬ ЦЕЙ ФІЛЬТР ---
+
+        // Don't include red ruler
         filter: (node) => {
-          // Якщо у елемента є клас 'ruler-layer', повертаємо false (не малювати)
           if (node.classList && node.classList.contains("ruler-layer")) {
             return false;
           }
-          return true; // Всі інші елементи малюємо
+          return true;
         },
       });
 
