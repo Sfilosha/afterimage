@@ -4,6 +4,7 @@ import {
   DEFAULT_SHADOW,
   DEFAULT_FILTER,
   DEFAULT_PERSPECTIVE,
+  DEFAULT_SIDES,
 } from "../defaults.js";
 
 const Sidebar = ({
@@ -52,10 +53,10 @@ const Sidebar = ({
   onExportProject,
   onImportProject,
 
-  depth,
-  setDepth,
   sideColor,
   setSideColor,
+  sides,
+  setSides,
 }) => {
   const fileInputRef = useRef(null);
 
@@ -192,42 +193,43 @@ const Sidebar = ({
         </div>
       </div>
 
-      {/* <div className="section">
+      <div className="section">
         <h3>4. 3D Товщина (Sides)</h3>
-        <label>
-          Depth X ({depth.x}):
-          <input
-            type="range"
-            min="-10"
-            max="10"
-            value={depth.x}
-            onChange={(e) => setDepth({ ...depth, x: Number(e.target.value) })}
-          />
-        </label>
-        <label>
-          Depth Y ({depth.y}):
-          <input
-            type="range"
-            min="-10"
-            max="10"
-            value={depth.y}
-            onChange={(e) => setDepth({ ...depth, y: Number(e.target.value) })}
-          />
-        </label>
         <label>
           Color:
           <input
             type="color"
-            value={sideColor}
-            onChange={(e) => setSideColor(e.target.value)}
+            value={sides.color}
+            onChange={(e) => setSides({ ...sides, color: e.target.value })}
           />
           <button
             className="btn"
             children="Remove color"
-            onClick={() => setSideColor("transparent")}
+            onClick={() => setSides({ ...sides, color: "transparent" })}
+          />
+          <button
+            className="btn"
+            children="Set AVG Color"
+            onClick={() => setSides({ ...sides, color: sides.default_color })}
+          />
+          <label className="title">
+            Глибина картини (Depth): {sides.thickness}
+          </label>
+          <input
+            type="range"
+            min="0"
+            max="20"
+            step="1"
+            value={sides.thickness || "0"}
+            onChange={(e) =>
+              setSides({ ...sides, thickness: Number(e.target.value) })
+            }
+            onDoubleClick={() =>
+              setSides({ ...sides, thickness: DEFAULT_SIDES.thickness })
+            }
           />
         </label>
-      </div> */}
+      </div>
 
       {/* 3. Occlusion (AI) - ОНОВЛЕНО */}
       <div className="section">

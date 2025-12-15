@@ -169,3 +169,18 @@ export const project3DPoint = (x, y, z, cx, cy, rx, ry, rz, pers) => {
     y: cy + py3 * scale,
   };
 };
+
+// src/utils/transformUtils.js
+
+/**
+ * Генерує CSS рядок для 3D трансформації
+ */
+export const get3DTransform = (position, rotation, perspective) => {
+  return `
+    translate3d(${position.x}px, ${position.y}px, 0)
+    perspective(${perspective}px)
+    rotateX(${rotation.x}deg)
+    rotateY(${rotation.y}deg)
+    rotateZ(${rotation.z}deg)
+  `;
+};
