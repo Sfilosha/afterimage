@@ -10,6 +10,7 @@ import {
   DEFAULT_FILTER,
   DEFAULT_SHADOW,
   DEFAULT_PERSPECTIVE,
+  DEFAULT_SIDES,
 } from "./defaults.js";
 import { saveAs } from "file-saver";
 import "./App.css";
@@ -52,7 +53,7 @@ function App() {
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [isSaving, setIsSaving] = useState(false);
   const [depth, setDepth] = useState({ x: 0, y: 0 }); // Вектор глибини (куди "дивиться" товщина)
-  const [sideColor, setSideColor] = useState("transparent"); // Колір торців
+  const [sides, setSides] = useState({ ...DEFAULT_SIDES });
 
   const [isGeneratingDepth, setIsGeneratingDepth] = useState(false);
   const [rawDepthCanvas, setRawDepthCanvas] = useState(null); // Тут зберігаємо оригінал карти глибини (canvas елемент)
@@ -70,69 +71,6 @@ function App() {
       heightPx = artworkDimsCm.height * pixelsPerCm;
     }
     return { width: widthPx, height: heightPx };
-  };
-
-  const getCalculatedCorners = () => {
-    const { width, height } = getArtworkPxDims();
-    if (!width || !height || !artworkPos || typeof width !== "number") {
-      return []; // Повертаємо пустий масив, SVG просто не намалюється в цей кадр
-    }
-
-    const x = Number(artworkPos?.x) || 0;
-    const y = Number(artworkPos?.y) || 0;
-
-    // 3. Безпечне отримання повороту (Fallback на 0)
-    // Важливо: rotation може бути undefined при першому рендері
-    const safeRotation = Number(rotation) || 0;
-
-    // Центр
-    const cx = x + width / 2;
-    const cy = y + height / 2;
-
-    const rad = (safeRotation * Math.PI) / 180;
-    const hw = width / 2;
-    const hh = height / 2;
-
-    // Координати кутів відносно ЦЕНТРУ
-    const localCorners = [
-      { x: -hw, y: -hh }, // TL
-      { x: hw, y: -hh }, // TR
-      { x: hw, y: hh }, // BR
-      { x: -hw, y: hh }, // BL
-    ];
-
-    return localCorners.map((p) => ({
-      x: cx + (p.x * Math.cos(rad) - p.y * Math.sin(rad)),
-      y: cy + (p.x * Math.sin(rad) + p.y * Math.cos(rad)),
-    }));
-  };
-
-  // Функція генерації шляхів для SVG (використовує розраховані кути)
-  const getSidePaths = () => {
-    const { width } = getArtworkPxDims();
-    if (!width || !artworkImgUrl) return [];
-
-    const corners = getCalculatedCorners();
-
-    if (!corners || corners.length !== 4) return [];
-
-    // Розраховуємо "задні" точки, додаючи вектор глибини
-    const backCorners = corners.map((p) => ({
-      x: p.x + depth.x,
-      y: p.y + depth.y,
-    }));
-
-    // Формуємо полігони для 4 сторін: Top, Right, Bottom, Left
-    return [
-      // Top: TL -> TR -> BackTR -> BackTL
-      `M ${corners[0].x} ${corners[0].y} L ${corners[1].x} ${corners[1].y} L ${backCorners[1].x} ${backCorners[1].y} L ${backCorners[0].x} ${backCorners[0].y} Z`,
-      // Right: TR -> BR -> BackBR -> BackTR
-      `M ${corners[1].x} ${corners[1].y} L ${corners[2].x} ${corners[2].y} L ${backCorners[2].x} ${backCorners[2].y} L ${backCorners[1].x} ${backCorners[1].y} Z`,
-      // Bottom: BR -> BL -> BackBL -> BackBR
-      `M ${corners[2].x} ${corners[2].y} L ${corners[3].x} ${corners[3].y} L ${backCorners[3].x} ${backCorners[3].y} L ${backCorners[2].x} ${backCorners[2].y} Z`,
-      // Left: BL -> TL -> BackTL -> BackBL
-      `M ${corners[3].x} ${corners[3].y} L ${corners[0].x} ${corners[0].y} L ${backCorners[0].x} ${backCorners[0].y} L ${backCorners[3].x} ${backCorners[3].y} Z`,
-    ];
   };
 
   const updateLightingMap = async () => {
@@ -218,6 +156,7 @@ function App() {
           style: {
             shadow,
             filters,
+            sides,
           },
           ai: {
             depthThreshold,
@@ -296,6 +235,11 @@ function App() {
         setFilters((prev) => ({
           ...prev,
           ...cfg.style.filters,
+        }));
+
+        setSides((prev) => ({
+          ...prev,
+          ...cfg.style.sides,
         }));
       }
       if (cfg.ai) {
@@ -420,19 +364,26 @@ function App() {
     }
   }, [refLineCoords, refLengthCm]);
 
+  const setAvgSideColor = () => {
+    getAverageColor(artworkImgUrl)
+      .then((avgColor) => {
+        // Ми не просто беремо колір, а затемнюємо його на 30%,
+        // тому що боковини зазвичай темніші через тінь.
+        const shadowSideColor = darkenColor(avgColor, 30);
+        setSides({
+          ...sides,
+          color: shadowSideColor,
+          default_color: shadowSideColor,
+        });
+      })
+      .catch((err) => {
+        console.error("Не вдалося визначити колір:", err);
+      });
+  };
+
   useEffect(() => {
     if (artworkImgUrl) {
-      getAverageColor(artworkImgUrl)
-        .then((avgColor) => {
-          // Ми не просто беремо колір, а затемнюємо його на 30%,
-          // тому що боковини зазвичай темніші через тінь.
-          const shadowSideColor = darkenColor(avgColor, 30);
-          setSideColor(shadowSideColor);
-        })
-        .catch((err) => {
-          console.error("Не вдалося визначити колір:", err);
-          setSideColor("#222222"); // Fallback на чорний
-        });
+      setAvgSideColor();
     }
   }, [artworkImgUrl]); // Запускаємо, коли міняється картинка
 
@@ -547,8 +498,8 @@ function App() {
         hasDepthMap={!!rawDepthCanvas}
         depth={depth}
         setDepth={setDepth}
-        sideColor={sideColor}
-        setSideColor={setSideColor}
+        sides={sides}
+        setSides={setSides}
       />
 
       <div
@@ -600,34 +551,6 @@ function App() {
                 WebkitMaskSize: "cover",
               }}
             >
-              {artworkImgUrl && (
-                <svg
-                  width={displaySize.width}
-                  height={displaySize.height}
-                  style={{
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    width: "100%",
-                    height: "100%",
-                    pointerEvents: "none",
-                    zIndex: 1, // Нижче, ніж ArtworkLayer (який має zIndex: 2 або auto)
-                  }}
-                >
-                  {getSidePaths().map((pathData, index) => (
-                    <path
-                      key={index}
-                      d={pathData}
-                      fill={sideColor} // Тепер sideColor існує
-                      stroke={sideColor}
-                      strokeWidth={0}
-                      strokeLinejoin="round"
-                      opacity={0.9}
-                    />
-                  ))}
-                </svg>
-              )}
-
               {/* ШАР КАРТИНИ (ARTWORK) */}
               {/* Додаємо zIndex: 2, щоб картина гарантовано була ПОВЕРХ граней */}
               <div
@@ -648,6 +571,7 @@ function App() {
                   isDragging={isDraggingArtwork}
                   onMouseDown={handleArtworkMouseDown}
                   lightingMapUrl={lightingMapUrl}
+                  sides={sides}
                 />
               </div>
             </div>

@@ -27,3 +27,9 @@ export const DEFAULT_PERSPECTIVE = {
   z: 0,
   perspective: 800,
 };
+
+export const DEFAULT_SIDES = {
+  default_color: "#fb0000ff",
+  color: "#000000",
+  thickness: 10,
+};
