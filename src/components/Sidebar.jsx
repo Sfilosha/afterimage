@@ -51,6 +51,11 @@ const Sidebar = ({
 
   onExportProject,
   onImportProject,
+
+  depth,
+  setDepth,
+  sideColor,
+  setSideColor,
 }) => {
   const fileInputRef = useRef(null);
 
@@ -187,6 +192,43 @@ const Sidebar = ({
         </div>
       </div>
 
+      {/* <div className="section">
+        <h3>4. 3D Товщина (Sides)</h3>
+        <label>
+          Depth X ({depth.x}):
+          <input
+            type="range"
+            min="-10"
+            max="10"
+            value={depth.x}
+            onChange={(e) => setDepth({ ...depth, x: Number(e.target.value) })}
+          />
+        </label>
+        <label>
+          Depth Y ({depth.y}):
+          <input
+            type="range"
+            min="-10"
+            max="10"
+            value={depth.y}
+            onChange={(e) => setDepth({ ...depth, y: Number(e.target.value) })}
+          />
+        </label>
+        <label>
+          Color:
+          <input
+            type="color"
+            value={sideColor}
+            onChange={(e) => setSideColor(e.target.value)}
+          />
+          <button
+            className="btn"
+            children="Remove color"
+            onClick={() => setSideColor("transparent")}
+          />
+        </label>
+      </div> */}
+
       {/* 3. Occlusion (AI) - ОНОВЛЕНО */}
       <div className="section">
         <h3>Depth Map (AI Auto)</h3>
@@ -286,7 +328,7 @@ const Sidebar = ({
           <input
             type="range"
             min="0"
-            max="100"
+            max="10"
             value={shadow.blur}
             onChange={(e) =>
               setShadow({ ...shadow, blur: Number(e.target.value) })
@@ -318,8 +360,8 @@ const Sidebar = ({
           <div className="row">
             <input
               type="range"
-              min="-50"
-              max="50"
+              min="-25"
+              max="25"
               value={shadow.offsetX}
               onChange={(e) =>
                 setShadow({ ...shadow, offsetX: Number(e.target.value) })
@@ -330,8 +372,8 @@ const Sidebar = ({
             />
             <input
               type="range"
-              min="-50"
-              max="50"
+              min="-25"
+              max="25"
               value={shadow.offsetY}
               onChange={(e) =>
                 setShadow({ ...shadow, offsetY: Number(e.target.value) })

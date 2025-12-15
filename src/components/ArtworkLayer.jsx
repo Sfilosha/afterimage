@@ -36,7 +36,6 @@ const ArtworkLayer = ({
           position: "absolute",
           left: 0,
           top: 0,
-          // Використовуємо налаштування користувача
           transform: getTransform(shadow.offsetX, shadow.offsetY),
           transformStyle: "preserve-3d",
 
@@ -101,6 +100,7 @@ const ArtworkLayer = ({
           cursor: isDragging ? "grabbing" : "grab",
           zIndex: 30,
           userSelect: "none",
+          overflow: "hidden",
         }}
         onMouseDown={onMouseDown}
       >
@@ -175,6 +175,7 @@ const ArtworkLayer = ({
               width: "100%",
               height: "100%",
               pointerEvents: "none",
+              border: "10px solid red",
               backgroundColor: "white",
               backgroundImage: `url(${lightingMapUrl})`,
               backgroundSize: "cover",

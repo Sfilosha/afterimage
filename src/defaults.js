@@ -1,7 +1,7 @@
 export const DEFAULT_SHADOW = {
-  offsetX: 5,
-  offsetY: 5,
-  blur: 5,
+  offsetX: 0,
+  offsetY: 0,
+  blur: 2,
   spread: 0,
   color: "#000000",
   opacity: 0.1,

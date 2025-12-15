@@ -4,7 +4,7 @@ import * as htmlToImage from "html-to-image";
 import Sidebar from "./components/Sidebar";
 import ArtworkLayer from "./components/ArtworkLayer";
 import { generateDepthMap, applyThresholdToDepthMap } from "./depthService";
-import { generateLightingMap } from "./utils"; //
+import { generateLightingMap, getAverageColor, darkenColor } from "./utils"; //
 import JSZip from "jszip";
 import {
   DEFAULT_FILTER,
@@ -51,6 +51,8 @@ function App() {
   const [isDraggingArtwork, setIsDraggingArtwork] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [isSaving, setIsSaving] = useState(false);
+  const [depth, setDepth] = useState({ x: 0, y: 0 }); // Вектор глибини (куди "дивиться" товщина)
+  const [sideColor, setSideColor] = useState("transparent"); // Колір торців
 
   const [isGeneratingDepth, setIsGeneratingDepth] = useState(false);
   const [rawDepthCanvas, setRawDepthCanvas] = useState(null); // Тут зберігаємо оригінал карти глибини (canvas елемент)
@@ -59,6 +61,79 @@ function App() {
 
   const containerRef = useRef(null);
   const captureAreaRef = useRef(null);
+
+  const getArtworkPxDims = () => {
+    let widthPx = displaySize.width * 0.2;
+    let heightPx = widthPx * (artworkDimsCm.height / artworkDimsCm.width);
+    if (pixelsPerCm) {
+      widthPx = artworkDimsCm.width * pixelsPerCm;
+      heightPx = artworkDimsCm.height * pixelsPerCm;
+    }
+    return { width: widthPx, height: heightPx };
+  };
+
+  const getCalculatedCorners = () => {
+    const { width, height } = getArtworkPxDims();
+    if (!width || !height || !artworkPos || typeof width !== "number") {
+      return []; // Повертаємо пустий масив, SVG просто не намалюється в цей кадр
+    }
+
+    const x = Number(artworkPos?.x) || 0;
+    const y = Number(artworkPos?.y) || 0;
+
+    // 3. Безпечне отримання повороту (Fallback на 0)
+    // Важливо: rotation може бути undefined при першому рендері
+    const safeRotation = Number(rotation) || 0;
+
+    // Центр
+    const cx = x + width / 2;
+    const cy = y + height / 2;
+
+    const rad = (safeRotation * Math.PI) / 180;
+    const hw = width / 2;
+    const hh = height / 2;
+
+    // Координати кутів відносно ЦЕНТРУ
+    const localCorners = [
+      { x: -hw, y: -hh }, // TL
+      { x: hw, y: -hh }, // TR
+      { x: hw, y: hh }, // BR
+      { x: -hw, y: hh }, // BL
+    ];
+
+    return localCorners.map((p) => ({
+      x: cx + (p.x * Math.cos(rad) - p.y * Math.sin(rad)),
+      y: cy + (p.x * Math.sin(rad) + p.y * Math.cos(rad)),
+    }));
+  };
+
+  // Функція генерації шляхів для SVG (використовує розраховані кути)
+  const getSidePaths = () => {
+    const { width } = getArtworkPxDims();
+    if (!width || !artworkImgUrl) return [];
+
+    const corners = getCalculatedCorners();
+
+    if (!corners || corners.length !== 4) return [];
+
+    // Розраховуємо "задні" точки, додаючи вектор глибини
+    const backCorners = corners.map((p) => ({
+      x: p.x + depth.x,
+      y: p.y + depth.y,
+    }));
+
+    // Формуємо полігони для 4 сторін: Top, Right, Bottom, Left
+    return [
+      // Top: TL -> TR -> BackTR -> BackTL
+      `M ${corners[0].x} ${corners[0].y} L ${corners[1].x} ${corners[1].y} L ${backCorners[1].x} ${backCorners[1].y} L ${backCorners[0].x} ${backCorners[0].y} Z`,
+      // Right: TR -> BR -> BackBR -> BackTR
+      `M ${corners[1].x} ${corners[1].y} L ${corners[2].x} ${corners[2].y} L ${backCorners[2].x} ${backCorners[2].y} L ${backCorners[1].x} ${backCorners[1].y} Z`,
+      // Bottom: BR -> BL -> BackBL -> BackBR
+      `M ${corners[2].x} ${corners[2].y} L ${corners[3].x} ${corners[3].y} L ${backCorners[3].x} ${backCorners[3].y} L ${backCorners[2].x} ${backCorners[2].y} Z`,
+      // Left: BL -> TL -> BackTL -> BackBL
+      `M ${corners[3].x} ${corners[3].y} L ${corners[0].x} ${corners[0].y} L ${backCorners[0].x} ${backCorners[0].y} L ${backCorners[3].x} ${backCorners[3].y} Z`,
+    ];
+  };
 
   const updateLightingMap = async () => {
     // Перевірка на наявність даних
@@ -155,7 +230,7 @@ function App() {
 
       // 5. Генеруємо ZIP і віддаємо користувачу
       const content = await zip.generateAsync({ type: "blob" });
-      saveAs(content, `art-project-${Date.now()}.zip`);
+      saveAs(content, `scene-${Date.now()}.zip`);
     } catch (error) {
       console.error("Export ZIP failed:", error);
       alert("Помилка при створенні архіву.");
@@ -203,7 +278,6 @@ function App() {
 
       setRefLengthCm(cfg.refLengthCm);
       setRefLineCoords(cfg.refLineCoords || []);
-
       setArtworkDimsCm(cfg.artwork.dimsCm);
       setArtworkPos(cfg.artwork.position);
       setIsRatioLocked(cfg.artwork.isRatioLocked);
@@ -302,7 +376,6 @@ function App() {
     }
   };
   const handleWidthChange = (e) => {
-    /* ... код ... */
     const newW = Number(e.target.value);
     let newH = artworkDimsCm.height;
     if (isRatioLocked && imgAspectRatio)
@@ -310,7 +383,6 @@ function App() {
     setArtworkDimsCm({ width: newW, height: newH });
   };
   const handleHeightChange = (e) => {
-    /* ... код ... */
     const newH = Number(e.target.value);
     let newW = artworkDimsCm.width;
     if (isRatioLocked && imgAspectRatio)
@@ -319,7 +391,6 @@ function App() {
   };
 
   useEffect(() => {
-    /* ... код resize ... */
     const calculateSize = () => {
       if (!interiorImageObj || !containerRef.current) return;
       const MAX_SIZE = 800; // Жорстке обмеження
@@ -348,6 +419,22 @@ function App() {
       setPixelsPerCm(pxLen / refLengthCm);
     }
   }, [refLineCoords, refLengthCm]);
+
+  useEffect(() => {
+    if (artworkImgUrl) {
+      getAverageColor(artworkImgUrl)
+        .then((avgColor) => {
+          // Ми не просто беремо колір, а затемнюємо його на 30%,
+          // тому що боковини зазвичай темніші через тінь.
+          const shadowSideColor = darkenColor(avgColor, 30);
+          setSideColor(shadowSideColor);
+        })
+        .catch((err) => {
+          console.error("Не вдалося визначити колір:", err);
+          setSideColor("#222222"); // Fallback на чорний
+        });
+    }
+  }, [artworkImgUrl]); // Запускаємо, коли міняється картинка
 
   const handleArtworkMouseDown = (e) => {
     if (drawMode === "refLine") return;
@@ -391,20 +478,11 @@ function App() {
     setRefLineCoords([refLineCoords[0], refLineCoords[1], pos.x, pos.y]);
   };
 
-  const getArtworkPxDims = () => {
-    let widthPx = displaySize.width * 0.2;
-    let heightPx = widthPx * (artworkDimsCm.height / artworkDimsCm.width);
-    if (pixelsPerCm) {
-      widthPx = artworkDimsCm.width * pixelsPerCm;
-      heightPx = artworkDimsCm.height * pixelsPerCm;
-    }
-    return { width: widthPx, height: heightPx };
-  };
-
   // --- НОВА ФУНКЦІЯ ЗБЕРЕЖЕННЯ ---
   const handleSave = async () => {
     if (!captureAreaRef.current) return;
     setIsSaving(true);
+
     try {
       const dataUrl = await htmlToImage.toPng(captureAreaRef.current, {
         quality: 1.0,
@@ -421,7 +499,7 @@ function App() {
       });
 
       const link = document.createElement("a");
-      link.download = "realistic-render-hd.png";
+      link.download = `render-image.png`;
       link.href = dataUrl;
       link.click();
     } catch (err) {
@@ -467,6 +545,10 @@ function App() {
         depthThreshold={depthThreshold}
         setDepthThreshold={setDepthThreshold}
         hasDepthMap={!!rawDepthCanvas}
+        depth={depth}
+        setDepth={setDepth}
+        sideColor={sideColor}
+        setSideColor={setSideColor}
       />
 
       <div
@@ -518,18 +600,42 @@ function App() {
                 WebkitMaskSize: "cover",
               }}
             >
-              {/* Ми обгорнули ArtworkLayer у цей div з маскою.
-                   Важливо: ArtworkLayer має pointerEvents: auto, але батьківський div має none.
-                   Щоб драг працював, треба ArtworkLayer прокинути pointerEvents: auto. 
-                   Але оскільки маска ріже видимість, вона НЕ блокує події миші у "прозорих" місцях для DOM, 
-                   але у візуальному рендерингу так.
-                   
-                   FIX: Перетягування може ламатися, якщо маска накладена на контейнер.
-                   Найкращий спосіб: ArtworkLayer сам по собі, а маска накладається ТІЛЬКИ на його візуальну частину?
-                   Ні, якщо ми хочемо, щоб картина заходила ЗА вазон, вона має бути обрізана.
-                */}
+              {artworkImgUrl && (
+                <svg
+                  width={displaySize.width}
+                  height={displaySize.height}
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    width: "100%",
+                    height: "100%",
+                    pointerEvents: "none",
+                    zIndex: 1, // Нижче, ніж ArtworkLayer (який має zIndex: 2 або auto)
+                  }}
+                >
+                  {getSidePaths().map((pathData, index) => (
+                    <path
+                      key={index}
+                      d={pathData}
+                      fill={sideColor} // Тепер sideColor існує
+                      stroke={sideColor}
+                      strokeWidth={0}
+                      strokeLinejoin="round"
+                      opacity={0.9}
+                    />
+                  ))}
+                </svg>
+              )}
+
+              {/* ШАР КАРТИНИ (ARTWORK) */}
+              {/* Додаємо zIndex: 2, щоб картина гарантовано була ПОВЕРХ граней */}
               <div
-                style={{ pointerEvents: "auto", width: "100%", height: "100%" }}
+                style={{
+                  pointerEvents: "auto",
+                  width: "100%",
+                  height: "100%",
+                }}
               >
                 <ArtworkLayer
                   imgUrl={artworkImgUrl}
