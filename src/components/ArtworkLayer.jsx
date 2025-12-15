@@ -1,6 +1,8 @@
 // src/components/ArtworkLayer.jsx
 import { NOISE_PATTERN } from "../noise";
 
+const sideHeight = 2;
+
 const ArtworkLayer = ({
   imgUrl,
   dimsPx,
@@ -122,9 +124,9 @@ const ArtworkLayer = ({
           style={{
             ...sideFaceStyle,
             width: `${FRAME_THICKNESS}px`,
-            height: `${dimsPx.height - 1.25}px`,
+            height: `${dimsPx.height - sideHeight}px`,
             left: `${dimsPx.width / 2 - FRAME_THICKNESS / 2}px`, // Центруємо по горизонталі
-            top: 0,
+            top: 1,
             // Повертаємо на 90 град по Y і висуваємо вправо на половину ширини картини
             transform: `rotateY(90deg) translateZ(${dimsPx.width / 2}px)`,
           }}
@@ -135,9 +137,9 @@ const ArtworkLayer = ({
           style={{
             ...sideFaceStyle,
             width: `${FRAME_THICKNESS}px`,
-            height: `${dimsPx.height - 1.25}px`,
+            height: `${dimsPx.height - sideHeight}px`,
             left: `${dimsPx.width / 2 - FRAME_THICKNESS / 2}px`, // Центруємо по горизонталі
-            top: 0,
+            top: 1,
             // Повертаємо на -90 град по Y і висуваємо (тепер це вліво від центру)
             transform: `rotateY(-90deg) translateZ(${dimsPx.width / 2}px)`,
           }}
@@ -147,7 +149,7 @@ const ArtworkLayer = ({
         <div
           style={{
             ...sideFaceStyle,
-            width: `${dimsPx.width - 1.25}px`,
+            width: `${dimsPx.width - sideHeight}px`,
             height: `${FRAME_THICKNESS}px`,
             top: `${dimsPx.height / 2 - FRAME_THICKNESS / 2}px`, // Центруємо по вертикалі
             left: 0,
@@ -160,7 +162,7 @@ const ArtworkLayer = ({
         <div
           style={{
             ...sideFaceStyle,
-            width: `${dimsPx.width - 1.25}px`,
+            width: `${dimsPx.width - sideHeight}px`,
             height: `${FRAME_THICKNESS}px`,
             top: `${dimsPx.height / 2 - FRAME_THICKNESS / 2}px`, // Центруємо по вертикалі
             left: 0,

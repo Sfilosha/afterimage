@@ -6,6 +6,13 @@ import {
   DEFAULT_PERSPECTIVE,
   DEFAULT_SIDES,
 } from "../defaults.js";
+import {
+  ArrowCounterClockwiseIcon,
+  LinkBreakIcon,
+  LockIcon,
+  LockOpenIcon,
+  XCircleIcon,
+} from "@phosphor-icons/react";
 
 const Sidebar = ({
   // Handlers for Files
@@ -110,20 +117,22 @@ const Sidebar = ({
             >
               {drawMode === "refLine" ? "Стоп" : "Лінійка"}
             </button>
-            <input
-              type="number"
-              value={refLengthCm}
-              onChange={(e) => setRefLengthCm(Number(e.target.value))}
-              style={{ width: "100px" }}
-            />{" "}
-            cm
+            <div className="al-center">
+              <input
+                type="number"
+                value={refLengthCm}
+                onChange={(e) => setRefLengthCm(Number(e.target.value))}
+                style={{ width: "100px" }}
+              />{" "}
+              cm
+            </div>
           </div>
         </div>
       </div>
 
       {/* --- Секція 2: Картина --- */}
       <div className="section">
-        <h3>2. Твір мистецтва</h3>
+        <h3>Твір мистецтва</h3>
         <div className="section-content">
           <input type="file" onChange={onArtworkChange} accept="image/*" />
           <div className="row">
@@ -143,8 +152,16 @@ const Sidebar = ({
                 onChange={onHeightChange}
               />
             </label>
-            <button onClick={toggleRatioLock}>
-              {isRatioLocked ? "🔒" : "🔓"}
+            <button
+              className={isRatioLocked ? "btn-primary" : "btn-secondary"}
+              onClick={toggleRatioLock}
+              style={{ height: "44px" }}
+            >
+              {isRatioLocked ? (
+                <LockIcon size={20} weight="fill" />
+              ) : (
+                <LockOpenIcon weight="fill" size={20} />
+              )}
             </button>
           </div>
 
@@ -194,32 +211,37 @@ const Sidebar = ({
       </div>
 
       <div className="section">
-        <h3>4. 3D Товщина (Sides)</h3>
-        <label>
-          Color:
+        <h3>Полотно</h3>
+        <div className="section-content">
           <input
+            className="color-picker"
             type="color"
             value={sides.color}
             onChange={(e) => setSides({ ...sides, color: e.target.value })}
           />
-          <button
-            className="btn"
-            children="Remove color"
-            onClick={() => setSides({ ...sides, color: "transparent" })}
-          />
-          <button
-            className="btn"
-            children="Set AVG Color"
-            onClick={() => setSides({ ...sides, color: sides.default_color })}
-          />
-          <label className="title">
-            Глибина картини (Depth): {sides.thickness}
-          </label>
+          <div className="row">
+            <button
+              className="btn-secondary"
+              onClick={() => setSides({ ...sides, color: "transparent" })}
+            >
+              <XCircleIcon weight="fill" size={20} />
+              Clear Color
+            </button>
+            <button
+              className="btn-secondary"
+              onClick={() => setSides({ ...sides, color: sides.default_color })}
+            >
+              {" "}
+              <ArrowCounterClockwiseIcon size={20} weight="fill" />
+              Default Color
+            </button>
+          </div>
+          <label className="title">Глибина полотна: {sides.thickness}</label>
           <input
             type="range"
             min="0"
-            max="20"
-            step="1"
+            max="16"
+            step="2"
             value={sides.thickness || "0"}
             onChange={(e) =>
               setSides({ ...sides, thickness: Number(e.target.value) })
@@ -228,7 +250,7 @@ const Sidebar = ({
               setSides({ ...sides, thickness: DEFAULT_SIDES.thickness })
             }
           />
-        </label>
+        </div>
       </div>
 
       {/* 3. Occlusion (AI) - ОНОВЛЕНО */}
@@ -269,7 +291,7 @@ const Sidebar = ({
 
       {/* --- Секція 3: Покращення --- */}
       <div className="section">
-        <h3>3. Атмосфера та Тінь</h3>
+        <h3>Атмосфера та Тінь</h3>
         <div className="section-content">
           <label className="title">
             💡 Вплив оточення (Lighting Map): {filters.lightingMapIntensity}%
@@ -438,14 +460,16 @@ const Sidebar = ({
               onChange={(e) => setShadow({ ...shadow, color: e.target.value })}
               style={{ width: "160px", height: "44px" }}
             />
-            <button
-              className="btn-secondary"
-              onClick={() =>
-                setShadow({ ...shadow, color: DEFAULT_SHADOW.color })
-              }
-              title="Reset Color"
-            ></button>
           </div>
+          <button
+            className="btn-secondary"
+            onClick={() =>
+              setShadow({ ...shadow, color: DEFAULT_SHADOW.color })
+            }
+            title="Reset Color"
+          >
+            <ArrowCounterClockwiseIcon size={20} weight="fill" /> Reset Color
+          </button>
         </div>
       </div>
 

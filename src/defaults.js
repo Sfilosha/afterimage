@@ -31,5 +31,5 @@ export const DEFAULT_PERSPECTIVE = {
 export const DEFAULT_SIDES = {
   default_color: "#fb0000ff",
   color: "#000000",
-  thickness: 20,
+  thickness: 10,
 };
