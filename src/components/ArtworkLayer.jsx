@@ -205,6 +205,7 @@ const ArtworkLayer = ({
               height: "100%",
               display: "block",
               pointerEvents: "none",
+              imageRendering: "high-quality",
             }}
           />
           {filters.noise > 0 && (
@@ -250,8 +251,8 @@ const ArtworkLayer = ({
                 backgroundImage: `url(${lightingMapUrl})`,
                 backgroundSize: "cover",
                 filter: `blur(${filters.lightingMapBlur}px) contrast(1.5) brightness(1.2) grayscale(100%)`,
-                transform: "scale(1.03)", // Невеликий скейл, щоб перекрити краї
-                mixBlendMode: "multiply",
+                transform: "scale(1.1)", // Невеликий скейл, щоб перекрити краї
+                mixBlendMode: "myltiply",
                 opacity: filters.lightingMapIntensity / 100,
                 zIndex: 32,
               }}
