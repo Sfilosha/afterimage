@@ -73,6 +73,54 @@ function App() {
     return { width: widthPx, height: heightPx };
   };
 
+  const resizeImage = (file, maxWidth = 1080) => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          let width = img.width;
+          let height = img.height;
+
+          // Логіка зменшення зі збереженням пропорцій
+          if (width > maxWidth || height > maxWidth) {
+            if (width > height) {
+              height = Math.round(height * (maxWidth / width));
+              width = maxWidth;
+            } else {
+              width = Math.round(width * (maxWidth / height));
+              height = maxWidth;
+            }
+          }
+
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+
+          const ctx = canvas.getContext("2d");
+          // Вмикаємо якісне згладжування при ресайзі
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = "high";
+
+          ctx.drawImage(img, 0, 0, width, height);
+
+          // Повертаємо стиснуте зображення (JPEG, якість 0.9)
+          // Якщо треба прозорість (PNG), можна змінити тип, але для картин краще JPEG
+          resolve(
+            canvas.toDataURL(
+              file.type === "image/png" ? "image/png" : "image/jpeg",
+              0.9
+            )
+          );
+        };
+        img.src = event.target.result;
+      };
+
+      reader.readAsDataURL(file);
+    });
+  };
+
   const updateLightingMap = async () => {
     // Перевірка на наявність даних
     if (!interiorImageObj || !displaySize.scale) return;
@@ -299,24 +347,46 @@ function App() {
       setFinalMaskUrl(null);
     }
   };
-  const handleArtworkFileChange = (e) => {
-    /* ... код ... */
+  const handleArtworkFileChange = async (e) => {
     const file = e.target.files[0];
-    if (file) {
-      const url = URL.createObjectURL(file);
-      setArtworkImgUrl(url);
+    if (!file) return;
+
+    try {
+      // 1. Спочатку зменшуємо зображення (макс 1600px)
+      // Це поверне рядок base64, який готовий до використання
+      const optimizedUrl = await resizeImage(file);
+
+      // 2. Зберігаємо це зменшене зображення в стейт для відображення
+      setArtworkImgUrl(optimizedUrl);
+
+      // 3. Вираховуємо пропорції, використовуючи вже оптимізовану картинку
       const img = new window.Image();
+
       img.onload = () => {
+        // Рахуємо Ratio (воно таке саме, як в оригіналу)
         const ratio = img.naturalHeight / img.naturalWidth;
+
         setImgAspectRatio(ratio);
         setIsRatioLocked(true);
+
+        // Оновлюємо розміри в сантиметрах
+        // Якщо ширина вже задана - підтягуємо висоту. Якщо ні - ставимо дефолт 100см.
         const currentWidth = artworkDimsCm.width || 100;
         setArtworkDimsCm({
           width: currentWidth,
           height: Math.round(currentWidth * ratio),
         });
       };
-      img.src = url;
+
+      // Важливо: ми завантажуємо в img саме optimizedUrl
+      img.src = optimizedUrl;
+
+      // 4. (Бонус з минулого кроку) Одразу рахуємо колір торців
+      getAverageColor(optimizedUrl)
+        .then((color) => setSides(getAverageColor(color)))
+        .catch(() => setSides({ ...sides, color: DEFAULT_SIDES.color }));
+    } catch (error) {
+      console.error("Помилка при обробці файлу:", error);
     }
   };
   const handleWidthChange = (e) => {
