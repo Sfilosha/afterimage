@@ -73,7 +73,7 @@ function App() {
     return { width: widthPx, height: heightPx };
   };
 
-  const resizeImage = (file, maxWidth = 1000) => {
+  const resizeImage = (file, maxWidth = 1080) => {
     return new Promise((resolve) => {
       const reader = new FileReader();
 
