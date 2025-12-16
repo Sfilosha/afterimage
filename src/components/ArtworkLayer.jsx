@@ -252,7 +252,7 @@ const ArtworkLayer = ({
                 backgroundSize: "cover",
                 filter: `blur(${filters.lightingMapBlur}px) contrast(1.5) brightness(1.2) grayscale(100%)`,
                 transform: "scale(1.1)", // Невеликий скейл, щоб перекрити краї
-                mixBlendMode: "myltiply",
+                mixBlendMode: "multiply",
                 opacity: filters.lightingMapIntensity / 100,
                 zIndex: 32,
               }}
