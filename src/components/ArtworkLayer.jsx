@@ -103,7 +103,6 @@ const ArtworkLayer = ({
           transformStyle: "preserve-3d",
           // Центр обертання має бути в центрі об'єкта
           transformOrigin: "50% 50%",
-
           cursor: isDragging ? "grabbing" : "grab",
           zIndex: 30,
           userSelect: "none",
@@ -129,6 +128,7 @@ const ArtworkLayer = ({
             top: 1,
             // Повертаємо на 90 град по Y і висуваємо вправо на половину ширини картини
             transform: `rotateY(90deg) translateZ(${dimsPx.width / 2}px)`,
+            zIndex: 1,
           }}
         />
 
@@ -142,11 +142,12 @@ const ArtworkLayer = ({
             top: 1,
             // Повертаємо на -90 град по Y і висуваємо (тепер це вліво від центру)
             transform: `rotateY(-90deg) translateZ(${dimsPx.width / 2}px)`,
+            zIndex: 1,
           }}
         />
 
         {/* ВЕРХНЯ ГРАНЬ */}
-        <div
+        {/* <div
           style={{
             ...sideFaceStyle,
             width: `${dimsPx.width - sideHeight}px`,
@@ -155,10 +156,11 @@ const ArtworkLayer = ({
             left: 0,
             // Повертаємо на 90 град по X і висуваємо вгору
             transform: `rotateX(90deg) translateZ(${dimsPx.height / 2}px)`,
+            zIndex: 1,
           }}
-        />
+        /> */}
 
-        {/* НИЖНЯ ГРАНЬ */}
+        {/* НИЖНЯ ГРАНЬ
         <div
           style={{
             ...sideFaceStyle,
@@ -168,8 +170,9 @@ const ArtworkLayer = ({
             left: 0,
             // Повертаємо на -90 град по X і висуваємо вниз
             transform: `rotateX(-90deg) translateZ(${dimsPx.height / 2}px)`,
+            zIndex: 1,
           }}
-        />
+        /> */}
 
         <div
           className="artwork-front-face"
@@ -185,7 +188,7 @@ const ArtworkLayer = ({
             backfaceVisibility: "hidden",
             overflow: "hidden",
             backgroundColor: "#fff", // Базовий колір, якщо картинка з прозорістю
-            zIndex: 2,
+            zIndex: 5,
 
             filter: `
             brightness(${filters.brightness}%) 
